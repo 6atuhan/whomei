@@ -1,5 +1,11 @@
 <template>
-    <div class="bg-violet-800">
+  <button @click="toggleWhatisFunc" class="border-2 rounded-xl bg-rose-200 hover:bg-rose-600 hover:text-white transition-all p-2 text-purple-900 border-zinc-800" to="whatis">?</button>
+  <button class=" transition-all float-right border-2 rounded-xl bg-rose-200 hover:bg-rose-600 hover:text-white p-2 text-purple-900 border-zinc-800" @click="logOut">X</button>
+
+    <what-is-comp v-show="toggleWhatis"></what-is-comp>
+
+    <div v-show="!toggleWhatis">
+        <div class="bg-violet-800">
         <h1
             class="
                 text-white
@@ -14,8 +20,8 @@
         >
             Who me i
         </h1>
-    </div>
-    <div class="flex justify-around items-center">
+        </div>
+        <div class="flex justify-around items-center">
         <button
             v-show="boolSettings"
             @click="toggleSettings"
@@ -46,8 +52,8 @@
         >
             <img src="/src/assets/002-settings.png" width="32" />
         </button>
-    </div>
-    <div
+        </div>
+        <div
         v-show="boolSettings"
         class="
             mt-12
@@ -121,10 +127,10 @@
         </button>
         </div>
     </div>
-    <div
+         <div
         v-show="!boolSettings"
         class="flex flex-col gap-3 mt-4 items-center justify-center"
-    >
+        >
         <h1
             class="
                 text-white
@@ -151,24 +157,44 @@
         >
         {{i.message}}
         </h1>
+        </div>
     </div>
 </template>
 
 
 <script setup>
-/* import kısımları  */
-
 import { computed, ref } from 'vue'
 import { db} from '../../firebase'
 import { collection, onSnapshot,addDoc , query, orderBy, limit } from 'firebase/firestore'
+import {signOut, getAuth } from 'firebase/auth'
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+import whatIsComp from '../../components/whatIsComp.vue'
+
 
 /* standar javascript  */
 
+const route=useRouter()
 const boolSettings = ref(false)
 var emptyFields = ref(false)
+const toggleWhatis = ref(false)
 var name=ref("")
 var message=ref("")
+const userId=ref("welcome")
+
+
+    var idddd=route.options.history.state.current
+    userId.value=idddd.slice(6)
+
+    
+
+///////1//////////////////////////////////////////
+/*auth */
+
+const toggleWhatisFunc = ()=>{
+    toggleWhatis.value= ! toggleWhatis.value
+}
 
 const isInputsEmpty=computed(()=>{
     return name.value == "" || message.value == "" ? false : true
@@ -191,7 +217,7 @@ const cleanInputs = ()=>{
 }
 /* firebase script */
 const saveContent = () => {
-    addDoc(collection(db, "whomeis"), {
+    addDoc(collection(db, userId.value), {
     name: name.value,
     message: message.value,
     date:Date.now()
@@ -201,15 +227,15 @@ const saveContent = () => {
 
 
 const firebasedenCekilmisAnaDizi = ref([])
-const itemleriSıralama = query (collection(db, "whomeis"), orderBy("date", "desc"),limit(1));
+const itemleriSıralama = query (collection(db, userId.value), orderBy("date", "desc"),limit(1));
 onMounted(() => {
     onSnapshot(itemleriSıralama, (querySnapshot) => { //collection(db, 'whomeis')
         const fbWhomeis = [];
         querySnapshot.forEach((doc) => {
             const cekilenVeri = {
                 id: doc.id,
-                message: doc.data().message,
-                name: doc.data().name,
+                message: doc.data(userId.value).message,
+                name: doc.data(userId.value).name,
             }
             fbWhomeis.push(cekilenVeri)
         });
@@ -218,6 +244,17 @@ onMounted(() => {
 
 
 })
+
+const logOut = ()=>{
+      const auth = getAuth();
+      signOut(auth).then(() => {
+        route.push("/")
+      }).catch((error) => {
+        // An error happened.
+      });
+
+}
+
 </script>
 
 
